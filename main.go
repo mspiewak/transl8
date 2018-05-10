@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -27,6 +28,8 @@ func (a *app) translateHandler() http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+
+		fmt.Println(string(bodyBytes))
 
 		w.Write(bodyBytes)
 	}
