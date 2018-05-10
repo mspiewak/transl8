@@ -1,0 +1,15 @@
+version: 2
+jobs:
+ build:
+   machine: true
+   steps:
+     - checkout
+     - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
+         
+     # build the application image
+     - run: docker build -t mspiewak/transl8:$CIRCLE_BRANCH .
+
+     # deploy the image
+     - run: docker push mspiewak/transl8:$CIRCLE_BRANCH
+
+     - run: ./.circleci/deploy.sh --cluster ecs-cluster --service transl8-service --task transl8 mspiewak/transl8:$CIRCLE_BRANCH
