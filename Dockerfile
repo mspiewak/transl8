@@ -10,6 +10,7 @@ RUN go build -o app
 
 FROM alpine
 ARG G_API_KEY
+RUN echo $G_API_KEY
 WORKDIR /app
 COPY --from=build-env /go/src/app/app /app/
 ENTRYPOINT ./app --gApiKey $G_API_KEY
