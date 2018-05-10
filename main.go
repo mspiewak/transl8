@@ -97,30 +97,33 @@ func (a *app) translateHandler() http.HandlerFunc {
 			return
 		}
 
-		type respStruct struct {
-			Raw string `json:"raw"`
-		}
-
-		respText, err := a.client.Translate(context.Background(), []string{req.Raw}, language.Polish, nil)
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		resp := respStruct{
-			Raw: respText[0].Text,
-		}
-
-		respBody, err := json.Marshal(resp)
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		w.Write(respBody)
+		a.translateToJSON(req.Raw, language.Sinhala, w)
 	}
+}
+
+func (a *app) translateToJSON(text string, lang language.Tag, w http.ResponseWriter) error {
+	type respStruct struct {
+		Raw string `json:"raw"`
+	}
+
+	respText, err := a.client.Translate(context.Background(), []string{text}, lang, nil)
+	if err != nil {
+		return fmt.Errorf("cannot get google api response: %v", err)
+	}
+
+	resp := respStruct{
+		Raw: respText[0].Text,
+	}
+
+	respBody, err := json.Marshal(resp)
+	if err != nil {
+		if err != nil {
+			return fmt.Errorf("cannot marshal response: %v", err)
+		}
+	}
+
+	w.Write(respBody)
+	return nil
 }
 
 func commonHeaders(next http.Handler) http.Handler {
