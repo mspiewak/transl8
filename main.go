@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
+	"time"
 
 	"cloud.google.com/go/translate"
 	"github.com/gorilla/mux"
@@ -14,15 +17,9 @@ import (
 )
 
 type app struct {
-	client *translate.Client
+	client           *translate.Client
+	connectivityData map[int]map[string]language.Tag
 }
-
-type room struct {
-	ID   int
-	lang language.Tag
-}
-
-var roomLanguage map[string][]room
 
 func main() {
 	var gAPIKey string
@@ -31,10 +28,13 @@ func main() {
 
 	var err error
 	var app app
+	app.connectivityData = make(map[int]map[string]language.Tag)
 	app.client, err = translate.NewClient(context.Background(), option.WithAPIKey(gAPIKey))
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	rand.Seed(time.Now().UTC().UnixNano())
 
 	r := mux.NewRouter()
 	r.Handle("/translate", app.translateHandler()).Methods(http.MethodPost)
@@ -43,15 +43,35 @@ func main() {
 	log.Fatal(http.ListenAndServe(":9010", commonHeaders(r)))
 }
 
-func create(r room) (string, error) {
-	return "", nil
+func (a *app) create(roomID string, lang language.Tag) int {
+	ID := rand.Intn(100000)
+	_, ok := a.connectivityData[ID]
+	if ok {
+		return a.create(roomID, lang)
+	}
+	a.connectivityData[ID] = make(map[string]language.Tag)
+	a.connectivityData[ID][roomID] = lang
+
+	return ID
 }
 
-func join(conferenceID string, r room) error {
+func (a *app) join(conferenceID int, roomID string, lang language.Tag) error {
+	_, ok := a.connectivityData[conferenceID]
+	if !ok {
+		return fmt.Errorf("conference %d doesn't exist", conferenceID)
+	}
+	a.connectivityData[conferenceID][roomID] = lang
+
 	return nil
 }
 
-func leave(conferenceID string, r room) error {
+func (a *app) leave(conferenceID int, roomID string) error {
+	_, ok := a.connectivityData[conferenceID]
+	if !ok {
+		return fmt.Errorf("conference %d doesn't exist", conferenceID)
+	}
+	delete(a.connectivityData[conferenceID], roomID)
+
 	return nil
 }
 
