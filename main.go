@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-	"io/ioutil"
+	"encoding/json"
 	"log"
 	"net/http"
 
@@ -22,16 +21,41 @@ func main() {
 
 func (a *app) translateHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		bodyBytes, err := ioutil.ReadAll(r.Body)
+		type reqStruct struct {
+			OrgID  string `json:"org_id"`
+			Source struct {
+				ID    string `json:"id"`
+				Name  string `json:"name"`
+				Email string `json:"email"`
+				Type  string `json:"type"`
+			} `json:"source"`
+			MessageID string `json:"id"`
+			TS        string `json:"ts"`
+			Raw       string `json:"raw"`
+		}
+		var req reqStruct
+
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		type respStruct struct {
+			Raw string `json:"raw"`
+		}
+		resp := respStruct{
+			Raw: req.Raw,
+		}
+
+		respBody, err := json.Marshal(resp)
 		if err != nil {
 			log.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		fmt.Println(string(bodyBytes))
-
-		w.Write(bodyBytes)
+		w.Write(respBody)
 	}
 }
 
