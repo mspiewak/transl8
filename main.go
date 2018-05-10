@@ -1,17 +1,34 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"flag"
 	"log"
 	"net/http"
 
+	"cloud.google.com/go/translate"
 	"github.com/gorilla/mux"
+	"golang.org/x/text/language"
+	"google.golang.org/api/option"
 )
 
-type app struct{}
+type app struct {
+	client *translate.Client
+}
 
 func main() {
+	var gAPIKey string
+	flag.StringVar(&gAPIKey, "gApiKey", "", "google api key")
+	flag.Parse()
+
+	var err error
 	var app app
+	app.client, err = translate.NewClient(context.Background(), option.WithAPIKey(gAPIKey))
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	r := mux.NewRouter()
 	r.Handle("/translate", app.translateHandler()).Methods(http.MethodPost)
 
@@ -44,8 +61,16 @@ func (a *app) translateHandler() http.HandlerFunc {
 		type respStruct struct {
 			Raw string `json:"raw"`
 		}
+
+		respText, err := a.client.Translate(context.Background(), []string{req.Raw}, language.Polish, nil)
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 		resp := respStruct{
-			Raw: req.Raw,
+			Raw: respText[0].Text,
 		}
 
 		respBody, err := json.Marshal(resp)
