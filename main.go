@@ -17,6 +17,13 @@ type app struct {
 	client *translate.Client
 }
 
+type room struct {
+	ID   int
+	lang language.Tag
+}
+
+var roomLanguage map[string][]room
+
 func main() {
 	var gAPIKey string
 	flag.StringVar(&gAPIKey, "gApiKey", "", "google api key")
@@ -34,6 +41,18 @@ func main() {
 
 	log.Println("listening")
 	log.Fatal(http.ListenAndServe(":9010", commonHeaders(r)))
+}
+
+func create(r room) (string, error) {
+	return "", nil
+}
+
+func join(conferenceID string, r room) error {
+	return nil
+}
+
+func leave(conferenceID string, r room) error {
+	return nil
 }
 
 func (a *app) translateHandler() http.HandlerFunc {

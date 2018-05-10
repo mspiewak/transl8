@@ -52,7 +52,7 @@
 [[projects]]
   branch = "master"
   name = "google.golang.org/api"
-  packages = ["gensupport","googleapi","googleapi/internal/uritemplates","googleapi/transport","internal","language/v1","option","transport/http"]
+  packages = ["gensupport","googleapi","googleapi/internal/uritemplates","googleapi/transport","internal","option","transport/http"]
   revision = "4bd7f4beb291148443ed4553071c4e0697ff4afb"
 
 [[projects]]
@@ -76,6 +76,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "408b9914979655ebcbe39506ee94c1a0f11f273fb57c939dcc5102e27c6b4a3c"
+  inputs-digest = "1d8add21e977d12cbdeeb7ec0361897f6ddd03b5f9799be88a8cbe4a0567b94a"
   solver-name = "gps-cdcl"
   solver-version = 1
