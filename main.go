@@ -8,6 +8,8 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/translate"
@@ -37,7 +39,7 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	r := mux.NewRouter()
-	r.Handle("/translate", app.translateHandler()).Methods(http.MethodPost)
+	r.Handle("/transl8", app.transl8Handler()).Methods(http.MethodPost)
 
 	log.Println("listening")
 	log.Fatal(http.ListenAndServe(":9010", commonHeaders(r)))
@@ -65,65 +67,108 @@ func (a *app) join(conferenceID int, roomID string, lang language.Tag) error {
 	return nil
 }
 
-func (a *app) leave(conferenceID int, roomID string) error {
-	_, ok := a.connectivityData[conferenceID]
-	if !ok {
-		return fmt.Errorf("conference %d doesn't exist", conferenceID)
-	}
-	delete(a.connectivityData[conferenceID], roomID)
+func (a *app) leave(roomID string) {
 
-	return nil
+	for conferenceID, v := range a.connectivityData {
+		if _, ok := v[roomID]; ok {
+			delete(a.connectivityData[conferenceID], roomID)
+		}
+	}
 }
 
-func (a *app) translateHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		type reqStruct struct {
-			OrgID  string `json:"org_id"`
-			Source struct {
-				ID    string `json:"id"`
-				Name  string `json:"name"`
-				Email string `json:"email"`
-				Type  string `json:"type"`
-			} `json:"source"`
-			MessageID string `json:"id"`
-			TS        string `json:"ts"`
-			Raw       string `json:"raw"`
-		}
-		var req reqStruct
+type reqStruct struct {
+	OrgID  string `json:"org_id"`
+	Source struct {
+		ID    string `json:"id"`
+		Name  string `json:"name"`
+		Email string `json:"email"`
+		Type  string `json:"type"`
+	} `json:"source"`
+	MessageID string `json:"id"`
+	TS        string `json:"ts"`
+	Raw       string `json:"raw"`
+}
 
+type respStruct struct {
+	Raw string `json:"raw"`
+}
+
+func (a *app) transl8Handler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		var req reqStruct
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			log.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		responseString, err := a.routeRequest(req)
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
-		a.translateToJSON(req.Raw, language.Sinhala, w)
+		resp := respStruct{
+			Raw: responseString,
+		}
+
+		respBody, err := json.Marshal(resp)
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Write(respBody)
 	}
 }
 
-func (a *app) translateToJSON(text string, lang language.Tag, w http.ResponseWriter) error {
-	type respStruct struct {
-		Raw string `json:"raw"`
-	}
+func resolveLanguage(command string) (language.Tag, error) {
+	command = strings.TrimSpace(command)
+	lastSpace := strings.LastIndex(command, " ") + 1
+	return language.Parse(strings.TrimSpace(command[lastSpace:]))
+}
 
-	respText, err := a.client.Translate(context.Background(), []string{text}, lang, nil)
-	if err != nil {
-		return fmt.Errorf("cannot get google api response: %v", err)
-	}
-
-	resp := respStruct{
-		Raw: respText[0].Text,
-	}
-
-	respBody, err := json.Marshal(resp)
-	if err != nil {
+func (a *app) routeRequest(req reqStruct) (string, error) {
+	log.Print(req.Raw)
+	log.Println(strings.Index(req.Raw, "@transl8 start conference") == 0)
+	roomID := fmt.Sprintf("%s:%s:%s", req.OrgID, req.Source.Type, req.Source.ID)
+	switch true {
+	case strings.Index(req.Raw, "@transl8 create conference") == 0:
+		fallthrough
+	case strings.Index(req.Raw, "@transl8 start conference") == 0:
+		log.Println("CREATE")
+		lang, err := resolveLanguage(req.Raw)
 		if err != nil {
-			return fmt.Errorf("cannot marshal response: %v", err)
+			return "Failed to create conference. Invalid language", err
 		}
-	}
+		confID := a.create(roomID, lang)
 
-	w.Write(respBody)
-	return nil
+		return fmt.Sprintf("Created conference ID: %d", confID), nil
+	case strings.Index(req.Raw, "@transl8 join conference") == 0:
+		log.Println("JOIN")
+		lang, err := resolveLanguage(req.Raw)
+		if err != nil {
+			return "", err
+		}
+		words := strings.Split(req.Raw, " ")
+		conferenceID, err := strconv.Atoi(words[len(words)-2])
+		if err != nil {
+			return "", err
+		}
+
+		err = a.join(conferenceID, roomID, lang)
+		if err != nil {
+			return "", err
+		}
+		return "Joined conference", nil
+	case strings.Index(req.Raw, "@transl8 leave conference") == 0:
+		log.Println("LEAVE")
+		a.leave(roomID)
+		return "Left conference", nil
+	}
+	return "", fmt.Errorf("Message not understood")
 }
 
 func commonHeaders(next http.Handler) http.Handler {
