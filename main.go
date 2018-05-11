@@ -131,14 +131,11 @@ func resolveLanguage(command string) (language.Tag, error) {
 }
 
 func (a *app) routeRequest(req reqStruct) (string, error) {
-	log.Print(req.Raw)
-	log.Println(strings.Index(req.Raw, "@transl8 start conference") == 0)
 	roomID := fmt.Sprintf("%s:%s:%s", req.OrgID, req.Source.Type, req.Source.ID)
 	switch true {
 	case strings.Index(req.Raw, "@transl8 create conference") == 0:
 		fallthrough
 	case strings.Index(req.Raw, "@transl8 start conference") == 0:
-		log.Println("CREATE")
 		lang, err := resolveLanguage(req.Raw)
 		if err != nil {
 			return "Failed to create conference. Invalid language", err
@@ -147,7 +144,6 @@ func (a *app) routeRequest(req reqStruct) (string, error) {
 
 		return fmt.Sprintf("Created conference ID: %d", confID), nil
 	case strings.Index(req.Raw, "@transl8 join conference") == 0:
-		log.Println("JOIN")
 		lang, err := resolveLanguage(req.Raw)
 		if err != nil {
 			return "", err
@@ -164,7 +160,6 @@ func (a *app) routeRequest(req reqStruct) (string, error) {
 		}
 		return "Joined conference", nil
 	case strings.Index(req.Raw, "@transl8 leave conference") == 0:
-		log.Println("LEAVE")
 		a.leave(roomID)
 		return "Left conference", nil
 	}

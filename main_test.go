@@ -132,7 +132,6 @@ func Test_app_routeRequest(t *testing.T) {
 				connectivityData: tt.fields.connectivityData,
 			}
 			g, err := a.routeRequest(tt.args.req)
-			t.Log(err)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("app.routeRequest() error = %v, wantErr %v", err, tt.wantErr)
 				return
