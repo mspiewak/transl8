@@ -117,7 +117,7 @@ func main() {
 		log.Fatal("dial:", err)
 	}
 
-	jsonText := `[{"uuid":"83519310-550c-11e8-9f4f-674c4437bc21","data":{"type":"hello","token":"eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI4MTc4MzIwNDkyNzQwNDA0OTM3ODI0MTkyOTc0NTEiLCJjc3QiOiJhZG1pbiIsImxpZCI6IjhYOEdCLjQ3NDciLCJpc3MiOiJodHRwczovL3BsYXRmb3JtLjh4OC5jb20iLCJ0eXAiOiJhY2Nlc3MiLCJhdWQiOiJ2b20iLCJzY2QiOiJ1c2VyIiwiZXhwIjoxNTI3MjQyODY1LCJpYXQiOjE1MjYwMzMyNjUsImJybyI6ZmFsc2UsInNjbyI6IjB4ODQiLCJqdGkiOiI1MzMwNGMzZS1mN2Q2LTQ1YmEtYjJmMy1lN2MxNzNkMzJhYjIiLCJjaWQiOiIyNTI1MDk3NzA2MjExMzU5Nzc4ODQ1ODkyOTQwMzIifQ.n3jfPswBsGHT8SEi2UFuak-xO_bt47WalW0gf26I85OWPk47kRbuvMWmr7SnIHQZLBkIyBx9BVVswk4YTJBjbsqP3XvqsOFq8O1tLa0e2n7GpGd_KL5yDs-sjJccXB1Jc3g6WrrHsDlT_Vgc1-4uh-vY5nQlhTJFCZDqpGf3i4z6oapyUAFptdLDfrDH_l2jFbpHtjXIDfI9rWeOUlKGcQJtbMU8vAltcYbva-fILyrn1bFFHQs1pecueTbBRRV25ft1W3NMrQSd8sZ1XUJ_lw33BZ3Y7744h8IWXUM4nSlwvIqVgx4cWXE807Llgr-Ta9Jde5haV8fBIQJuZpGK5g"}}]`
+	jsonText := ``
 	if err := c.WriteMessage(websocket.TextMessage, []byte(jsonText)); err != nil {
 		log.Println("write:", err)
 		return
