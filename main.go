@@ -163,7 +163,11 @@ func (a *app) routeRequest(req reqStruct) (string, error) {
 		a.leave(roomID)
 		return "Left conference", nil
 	}
-	return "", fmt.Errorf("Message not understood")
+	return `Message not understood.
+Available commands:
+<b>@transl8 create conference {language code}</b> Creates a conference and sets the language for the current room to the language"
+<b>@transl8 join conference {conference id} {language code}</b> Joins an existing conference and sets the language for the current room to the language"
+<b>@transl8 leave conference</b> Removes the room from all registered conferences`, nil
 }
 
 func commonHeaders(next http.Handler) http.Handler {
