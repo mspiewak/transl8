@@ -39,7 +39,7 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	r := mux.NewRouter()
-	r.Handle("/transl8", app.transl8Handler()).Methods(http.MethodPost)
+	r.Handle("/", app.transl8Handler()).Methods(http.MethodPost)
 
 	log.Println("listening")
 	log.Fatal(http.ListenAndServe(":9010", commonHeaders(r)))
