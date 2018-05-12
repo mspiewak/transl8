@@ -86,7 +86,7 @@ type reqStruct struct {
 		Type  string `json:"type"`
 	} `json:"source"`
 	MessageID string `json:"id"`
-	TS        string `json:"ts"`
+	TS        int64  `json:"ts"`
 	Raw       string `json:"raw"`
 }
 
