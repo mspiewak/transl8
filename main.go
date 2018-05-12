@@ -39,10 +39,10 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	r := mux.NewRouter()
-	r.Handle("/", app.transl8Handler()).Methods(http.MethodPost)
+	r.Handle("/Transl8", app.transl8Handler()).Methods(http.MethodPost)
 
 	log.Println("listening")
-	log.Fatal(http.ListenAndServe("", commonHeaders(r)))
+	log.Fatal(http.ListenAndServe(":9010", commonHeaders(r)))
 }
 
 func (a *app) create(roomID string, lang language.Tag) int {
