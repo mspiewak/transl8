@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -53,12 +55,37 @@ type reqStruct struct {
 		Type  string `json:"type"`
 	} `json:"source"`
 	MessageID string `json:"id"`
-	TS        string `json:"ts"`
+	TS        int64  `json:"ts"`
 	Raw       string `json:"raw"`
 }
 
 type respStruct struct {
 	Raw string `json:"raw"`
+}
+
+func (a *app) echoHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		body, err := ioutil.ReadAll(r.Body)
+
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		resp := respStruct{
+			Raw: fmt.Sprintf("PATH: %s  CONTENT: %s", r.RequestURI, string(body)),
+		}
+
+		respBody, err := json.Marshal(resp)
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Write(respBody)
+	}
 }
 
 func (a *app) transl8Handler() http.HandlerFunc {
