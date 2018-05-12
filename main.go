@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -39,7 +40,7 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	r := mux.NewRouter()
-	r.Handle("/Transl8", app.transl8Handler()).Methods(http.MethodPost)
+	r.Handle("/{abc}", app.echoHandler()).Methods(http.MethodPost)
 
 	log.Println("listening")
 	log.Fatal(http.ListenAndServe(":9010", commonHeaders(r)))
@@ -91,6 +92,31 @@ type reqStruct struct {
 
 type respStruct struct {
 	Raw string `json:"raw"`
+}
+
+func (a *app) echoHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		body, err := ioutil.ReadAll(r.Body)
+
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		resp := respStruct{
+			Raw: fmt.Sprintf("PATH: %s  CONTENT: %s", r.RequestURI, string(body)),
+		}
+
+		respBody, err := json.Marshal(resp)
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Write(respBody)
+	}
 }
 
 func (a *app) transl8Handler() http.HandlerFunc {
