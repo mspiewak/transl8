@@ -42,18 +42,17 @@ func Test_app_routeRequest(t *testing.T) {
 			fields{nil, make(map[int]map[string]language.Tag)},
 			args{
 				req: reqStruct{
-					OrgID: "orgABC",
 					Source: source{
 						ID:   "forum1",
 						Type: "forum",
 					},
-					Raw: "@transl8 start conference en",
+					Raw: "@Transl8 start conference en",
 				},
 			},
 			want{
 				map[int]map[string]language.Tag{
 					1: {
-						"orgABC:forum:forum1": language.English,
+						"f:forum1": language.English,
 					},
 				},
 				"Created conference ID: ###",
@@ -72,20 +71,19 @@ func Test_app_routeRequest(t *testing.T) {
 			},
 			args{
 				req: reqStruct{
-					OrgID: "orgABC",
 					Source: source{
 						ID:   "forum1",
 						Type: "forum",
 					},
-					Raw: "@transl8 join conference 1 fr",
+					Raw: "@Transl8 join conference 1 fr",
 				},
 				conf: 1,
 			},
 			want{
 				map[int]map[string]language.Tag{
 					1: {
-						"ABC": language.Czech,
-						"orgABC:forum:forum1": language.French,
+						"ABC":      language.Czech,
+						"f:forum1": language.French,
 					},
 				},
 				"Joined conference",
@@ -98,19 +96,18 @@ func Test_app_routeRequest(t *testing.T) {
 				nil,
 				map[int]map[string]language.Tag{
 					1: {
-						"ABC": language.Czech,
-						"orgABC:forum:forum1": language.French,
+						"ABC":      language.Czech,
+						"f:forum1": language.French,
 					},
 				},
 			},
 			args{
 				req: reqStruct{
-					OrgID: "orgABC",
 					Source: source{
 						ID:   "forum1",
 						Type: "forum",
 					},
-					Raw: "@transl8 leave conference",
+					Raw: "@Transl8 leave conference",
 				},
 				conf: 1,
 			},

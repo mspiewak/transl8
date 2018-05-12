@@ -40,7 +40,7 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	r := mux.NewRouter()
-	r.Handle("/{abc}", app.echoHandler()).Methods(http.MethodPost)
+	r.Handle("/transl8", app.transl8Handler()).Methods(http.MethodPost)
 
 	log.Println("listening")
 	log.Fatal(http.ListenAndServe(":9010", commonHeaders(r)))
@@ -157,11 +157,11 @@ func resolveLanguage(command string) (language.Tag, error) {
 }
 
 func (a *app) routeRequest(req reqStruct) (string, error) {
-	roomID := fmt.Sprintf("%s:%s:%s", req.OrgID, req.Source.Type, req.Source.ID)
+	roomID := fmt.Sprintf("%s:%s", string(req.Source.Type[0]), req.Source.ID)
 	switch true {
-	case strings.Index(req.Raw, "@transl8 create conference") == 0:
+	case strings.Index(req.Raw, "@Transl8 create conference") == 0:
 		fallthrough
-	case strings.Index(req.Raw, "@transl8 start conference") == 0:
+	case strings.Index(req.Raw, "@Transl8 start conference") == 0:
 		lang, err := resolveLanguage(req.Raw)
 		if err != nil {
 			return "Failed to create conference. Invalid language", err
@@ -169,7 +169,7 @@ func (a *app) routeRequest(req reqStruct) (string, error) {
 		confID := a.create(roomID, lang)
 
 		return fmt.Sprintf("Created conference ID: %d", confID), nil
-	case strings.Index(req.Raw, "@transl8 join conference") == 0:
+	case strings.Index(req.Raw, "@Transl8 join conference") == 0:
 		lang, err := resolveLanguage(req.Raw)
 		if err != nil {
 			return "", err
@@ -185,15 +185,15 @@ func (a *app) routeRequest(req reqStruct) (string, error) {
 			return "", err
 		}
 		return "Joined conference", nil
-	case strings.Index(req.Raw, "@transl8 leave conference") == 0:
+	case strings.Index(req.Raw, "@Transl8 leave conference") == 0:
 		a.leave(roomID)
 		return "Left conference", nil
 	}
 	return `Message not understood.
 Available commands:
-<b>@transl8 create conference {language code}</b> Creates a conference and sets the language for the current room to the language"
-<b>@transl8 join conference {conference id} {language code}</b> Joins an existing conference and sets the language for the current room to the language"
-<b>@transl8 leave conference</b> Removes the room from all registered conferences`, nil
+<b>@Transl8 create conference {language code}</b> Creates a conference and sets the language for the current room to the language"
+<b>@Transl8 join conference {conference id} {language code}</b> Joins an existing conference and sets the language for the current room to the language"
+<b>@Transl8 leave conference</b> Removes the room from all registered conferences`, nil
 }
 
 func commonHeaders(next http.Handler) http.Handler {
