@@ -42,7 +42,7 @@ func main() {
 	r.Handle("/", app.transl8Handler()).Methods(http.MethodPost)
 
 	log.Println("listening")
-	log.Fatal(http.ListenAndServe(":80", commonHeaders(r)))
+	log.Fatal(http.ListenAndServe("", commonHeaders(r)))
 }
 
 func (a *app) create(roomID string, lang language.Tag) int {
