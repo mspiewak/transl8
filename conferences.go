@@ -89,7 +89,11 @@ func (a *app) routeRequest(req reqStruct) (string, error) {
 	}
 	return `Message not understood.
 Available commands:
-<b>@Transl8 create conference {language code}</b> Creates a conference and sets the language for the current room to the language"
-<b>@Transl8 join conference {conference id} {language code}</b> Joins an existing conference and sets the language for the current room to the language"
-<b>@Transl8 leave conference</b> Removes the room from all registered conferences`, nil
+*@Transl8* create conference {language code}
+    Creates a conference and sets the language for the current room to the language
+*@Transl8* join conference {conference id} {language code}
+    Joins an existing conference and sets the language for the current room to the language"
+*@Transl8* leave conference
+    Removes the room from all registered conferences
+    `, nil
 }
