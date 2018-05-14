@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"cloud.google.com/go/translate"
 
@@ -75,6 +76,7 @@ func (a *app) ShareMessage(m message) error {
 					return fmt.Errorf("failed to translate to %s: %v", lang, err)
 				}
 				translations[lang] = trans[0].Text
+				log.Println(translations[lang])
 			}
 			err = a.PostMessage(
 				postMessageData{

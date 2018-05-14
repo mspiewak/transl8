@@ -139,6 +139,8 @@ func (app *app) wsHandler(done chan struct{}) {
 			continue
 		}
 
+		log.Println(string(bodymsg))
+
 		app.ShareMessage(m[0])
 	}
 }
