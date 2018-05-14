@@ -60,7 +60,7 @@ func main() {
 	app.wsConn = c
 
 	authRequest := []authRequest{{
-		UUID: uuid.Must(uuid.NewV4()).String(),
+		UUID: uuid.NewV4().String(),
 		Data: authRequestData{
 			Type:  "hello",
 			Token: chaletBotKey,

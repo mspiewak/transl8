@@ -83,7 +83,7 @@ type ackMessage []struct {
 func getSocketRequest(sessionKey string) socketRequest {
 	return socketRequest{
 		Ts:           time.Now().Unix(),
-		UUID:         uuid.Must(uuid.NewV4()).String(),
+		UUID:         uuid.NewV4().String(),
 		RetryPolicy:  "same_session",
 		TimedOutAtTs: time.Now().Unix() + int64(1000000),
 		SessionKey:   sessionKey,
