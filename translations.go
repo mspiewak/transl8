@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 
 	"cloud.google.com/go/translate"
 
@@ -40,7 +39,16 @@ type MessagePoster interface {
 }
 
 func (a *app) PostMessage(data postMessageData) error {
-	log.Println(data)
+	p := []postMessage{
+		{
+			socketRequest: getSocketRequest(a.sessionKey),
+			Data:          data,
+		},
+	}
+
+	if err := a.wsConn.WriteJSON(p); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -58,6 +66,9 @@ func (a *app) ShareMessage(m message) error {
 
 	for _, c := range confs {
 		for r, lang := range a.connectivityData[c] {
+			if detecteds[0][0].Language == lang && r == m.Data.RoomID {
+				continue
+			}
 			if _, ok := translations[lang]; ok == false {
 				trans, err := a.client.Translate(a.ctx, []string{m.Data.Parsed}, lang, &translate.Options{})
 				if err != nil {

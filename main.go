@@ -9,10 +9,15 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/url"
+	"os"
+	"os/signal"
 	"time"
 
 	"cloud.google.com/go/translate"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
+	uuid "github.com/satori/go.uuid"
 	"golang.org/x/text/language"
 	"google.golang.org/api/option"
 )
@@ -21,14 +26,30 @@ type app struct {
 	client           *translate.Client
 	connectivityData map[int]map[string]language.Tag
 	ctx              context.Context
+	wsConn           *websocket.Conn
+	sessionKey       string
 }
 
 func main() {
 	var gAPIKey string
+	var chaletBotKey string
+	var chaletURL string
 	flag.StringVar(&gAPIKey, "gApiKey", "", "google api key")
+	flag.StringVar(&chaletBotKey, "chaletBotKey", "", "chalet bot key")
+	flag.StringVar(&chaletURL, "chaletUrl", "api.us-east.chalet.8x8.com", "chalet url")
 	flag.Parse()
 
-	var err error
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt)
+
+	u := url.URL{Scheme: "wss", Host: chaletURL, Path: "/ws/v1"}
+	log.Printf("connecting to %s", u.String())
+	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	if err != nil {
+		log.Fatal("dial:", err)
+	}
+	defer c.Close()
+
 	var app app
 	app.connectivityData = make(map[int]map[string]language.Tag)
 	app.ctx = context.Background()
@@ -36,14 +57,74 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	app.wsConn = c
 
+	authRequest := []authRequest{{
+		UUID: uuid.Must(uuid.NewV4()).String(),
+		Data: authRequestData{
+			Type:  "hello",
+			Token: chaletBotKey,
+		},
+	}}
+
+	if err := c.WriteJSON(authRequest); err != nil {
+		log.Fatalf("cannot register ws: %v", err)
+		return
+	}
+
+	var a auth
+	if err := c.ReadJSON(&a); err != nil {
+		log.Fatalf("cannot read session: %v", err)
+	}
+
+	app.sessionKey = a[0].Data.SessionKey
+
+	done := make(chan struct{})
 	rand.Seed(time.Now().UTC().UnixNano())
+
+	go app.wsHandler(done)
 
 	r := mux.NewRouter()
 	r.Handle("/transl8", app.transl8Handler()).Methods(http.MethodPost)
 
 	log.Println("listening")
-	log.Fatal(http.ListenAndServe(":9010", commonHeaders(r)))
+	go http.ListenAndServe(":9010", commonHeaders(r))
+
+	ticker := time.NewTicker(time.Second * 10)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-done:
+			return
+		case <-ticker.C:
+			p := []ping{
+				{
+					socketRequest: getSocketRequest(app.sessionKey),
+					Data:          "ping",
+				},
+			}
+			if err := c.WriteJSON(p); err != nil {
+				log.Println("ping error:", err)
+				return
+			}
+		case <-interrupt:
+			log.Println("interrupt")
+
+			// Cleanly close the connection by sending a close message and then
+			// waiting (with timeout) for the server to close the connection.
+			err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+			if err != nil {
+				log.Println("write close:", err)
+				return
+			}
+			select {
+			case <-done:
+			case <-time.After(time.Second):
+			}
+			return
+		}
+	}
+
 }
 
 type reqStruct struct {

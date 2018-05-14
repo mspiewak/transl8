@@ -11,7 +11,10 @@ RUN go build -o app
 FROM alpine
 ARG G_API_KEY
 ENV ENV_G_API_KEY=$G_API_KEY
-RUN echo $ENV_G_API_KEY
+
+ARG CH_BOT_KEY
+ENV ENV_CH_BOT_KEY=$CH_BOT_KEY
+
 WORKDIR /app
 COPY --from=build-env /go/src/app/app /app/
-ENTRYPOINT ./app --gApiKey $ENV_G_API_KEY
+ENTRYPOINT ./app --gApiKey $ENV_G_API_KEY --chaletBotKey $ENV_CH_BOT_KEY
