@@ -45,6 +45,10 @@ func (a *app) leave(roomID string) {
 		if _, ok := v[roomID]; ok {
 			delete(a.connectivityData[conferenceID], roomID)
 		}
+
+		if len(v) == 0 {
+			delete(a.connectivityData, conferenceID)
+		}
 	}
 }
 
