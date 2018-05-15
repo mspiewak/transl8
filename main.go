@@ -84,25 +84,23 @@ func main() {
 		log.Fatalf("cannot read session: %v", err)
 	}
 
-	// app.sessionKey = a[0].Data.SessionKey
+	app.sessionKey = a[0].Data.SessionKey
 
 	if err := app.ParseTemplates(); err != nil {
 		log.Fatalf("cannot parse templates: %v", err)
 	}
 
-	// done := make(chan struct{})
+	done := make(chan struct{})
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	// go app.wsHandler(done)
 	r := mux.NewRouter()
-	r.Handle("/transl8", app.transl8Handler()).Methods(http.MethodPost)
-
-	r1 := mux.NewRouter()
-	r1.Handle("/admin", app.adminHandler()).Methods(http.MethodGet)
+	go r.Handle("/transl8", commonHeaders(app.transl8Handler())).Methods(http.MethodPost)
+	go r.Handle("/admin", app.adminHandler()).Methods(http.MethodGet)
+	go r.Handle("/details/{confID}", app.adminHandler()).Methods(http.MethodGet)
 
 	log.Println("listening")
-	go http.ListenAndServe(":9010", commonHeaders(r))
-	go http.ListenAndServe(":8080", r1s)
+	go http.ListenAndServe(":9010", r)
 
 	ticker := time.NewTicker(time.Second * 10)
 	defer ticker.Stop()
@@ -189,11 +187,11 @@ func (a *app) transl8Handler() http.HandlerFunc {
 	}
 }
 
-func commonHeaders(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func commonHeaders(next http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 
 		next.ServeHTTP(w, r)
-	})
+	}
 }

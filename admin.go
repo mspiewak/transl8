@@ -3,7 +3,11 @@ package main
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 const (
@@ -36,18 +40,6 @@ const (
 			<tbody>
 				{{range .Rooms}}
 				<tr><td>{{.ID}}</td><td>{{.Name}}</td><td>{{.Language}}</td></tr>
-				{{end}}
-			</tbody>
-		</table>
-
-		<h2>Original Transcript</h2>
-		<table>
-			<thead>
-				<tr><th>Room ID</th><th>Comment</th></tr>
-			</thead>
-			<tbody>
-				{{range .Transcript}}
-				<tr><td>{{.RoomID}}</td><td>{{.Raw}}</td></tr>
 				{{end}}
 			</tbody>
 		</table>
@@ -85,5 +77,33 @@ func (a *app) adminHandler() http.HandlerFunc {
 		}
 
 		a.templates["admin"].Execute(w, struct{ Conferences []conf }{conferenceList})
+	}
+}
+
+func (a *app) detailsHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		args := mux.Vars(r)
+		type confRoom struct {
+			ID       string
+			Name     string
+			Language string
+		}
+		type conf struct {
+			Rooms []confRoom
+		}
+		conference := conf{}
+
+		confID, err := strconv.Atoi(args["confID"])
+		if err != nil {
+			log.Printf("Invalid conf ID: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		for _, rm := range a.connectivityData[confID] {
+			conference.Rooms = append(conference.Rooms, confRoom{rm.ID, rm.Name, rm.Lang.String()})
+		}
+
+		a.templates["details"].Execute(w, conference)
 	}
 }
