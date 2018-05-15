@@ -10,24 +10,24 @@ import (
 	"golang.org/x/text/language"
 )
 
-func (a *app) create(roomID string, lang language.Tag) int {
-	if err := a.joinRoom(roomID); err != nil {
+func (a *app) create(r room) int {
+	if err := a.joinRoom(r.ID); err != nil {
 		log.Println(err)
 		return 0
 	}
 	ID := rand.Intn(100000)
 	_, ok := a.connectivityData[ID]
 	if ok {
-		return a.create(roomID, lang)
+		return a.create(r)
 	}
-	a.connectivityData[ID] = make(map[string]language.Tag)
-	a.connectivityData[ID][roomID] = lang
+	a.connectivityData[ID] = make(map[string]room)
+	a.connectivityData[ID][r.ID] = r
 
 	return ID
 }
 
-func (a *app) join(conferenceID int, roomID string, lang language.Tag) error {
-	if err := a.joinRoom(roomID); err != nil {
+func (a *app) join(conferenceID int, r room) error {
+	if err := a.joinRoom(r.ID); err != nil {
 		return err
 	}
 
@@ -35,7 +35,7 @@ func (a *app) join(conferenceID int, roomID string, lang language.Tag) error {
 	if !ok {
 		return fmt.Errorf("conference %d doesn't exist", conferenceID)
 	}
-	a.connectivityData[conferenceID][roomID] = lang
+	a.connectivityData[conferenceID][r.ID] = r
 
 	return nil
 }
@@ -55,7 +55,10 @@ func resolveLanguage(command string) (language.Tag, error) {
 }
 
 func (a *app) routeRequest(req reqStruct) (string, error) {
-	roomID := fmt.Sprintf("%s:%s", string(req.Source.Type[0]), req.Source.ID)
+	r := room{
+		ID:   fmt.Sprintf("%s:%s", string(req.Source.Type[0]), req.Source.ID),
+		Name: req.Source.Name,
+	}
 	switch true {
 	case strings.Index(req.Raw, "@Transl8 create conference") == 0:
 		fallthrough
@@ -64,9 +67,10 @@ func (a *app) routeRequest(req reqStruct) (string, error) {
 		if err != nil {
 			return "Failed to create conference. Invalid language", err
 		}
-		confID := a.create(roomID, lang)
+		r.Lang = lang
+		r.ConferenceID = a.create(r)
 
-		return fmt.Sprintf("Created conference ID: %d", confID), nil
+		return fmt.Sprintf("Created conference ID: %d", r.ConferenceID), nil
 	case strings.Index(req.Raw, "@Transl8 join conference") == 0:
 		lang, err := resolveLanguage(req.Raw)
 		if err != nil {
@@ -77,14 +81,15 @@ func (a *app) routeRequest(req reqStruct) (string, error) {
 		if err != nil {
 			return "", err
 		}
+		r.Lang = lang
+		r.ConferenceID = conferenceID
 
-		err = a.join(conferenceID, roomID, lang)
-		if err != nil {
+		if err := a.join(conferenceID, r); err != nil {
 			return "", err
 		}
 		return "Joined conference", nil
 	case strings.Index(req.Raw, "@Transl8 leave conference") == 0:
-		a.leave(roomID)
+		a.leave(r.ID)
 		return "Left conference", nil
 	}
 	return `Message not understood.

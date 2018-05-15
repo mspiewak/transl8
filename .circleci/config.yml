@@ -7,7 +7,7 @@ jobs:
      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
 
      # build the application image
-     - run: docker build --build-arg G_API_KEY=$G_API_KEY -t mspiewak/transl8:$CIRCLE_BRANCH .
+     - run: docker build --build-arg G_API_KEY=$G_API_KEY --build-arg CH_BOT_KEY=$CH_BOT_KEY -t mspiewak/transl8:$CIRCLE_BRANCH .
 
      # deploy the image
      - run: docker push mspiewak/transl8:$CIRCLE_BRANCH
