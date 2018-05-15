@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
-	"fmt"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -24,10 +22,17 @@ import (
 
 type app struct {
 	client           *translate.Client
-	connectivityData map[int]map[string]language.Tag
+	connectivityData map[int]map[string]room
 	ctx              context.Context
 	wsConn           *websocket.Conn
 	sessionKey       string
+}
+
+type room struct {
+	ID           string
+	Name         string
+	Lang         language.Tag
+	ConferenceID int
 }
 
 func main() {
@@ -51,7 +56,7 @@ func main() {
 	defer c.Close()
 
 	var app app
-	app.connectivityData = make(map[int]map[string]language.Tag)
+	app.connectivityData = make(map[int]map[string]room)
 	app.ctx = context.Background()
 	app.client, err = translate.NewClient(app.ctx, option.WithAPIKey(gAPIKey))
 	if err != nil {
@@ -142,31 +147,6 @@ type reqStruct struct {
 
 type respStruct struct {
 	Raw string `json:"raw"`
-}
-
-func (a *app) echoHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := ioutil.ReadAll(r.Body)
-
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		resp := respStruct{
-			Raw: fmt.Sprintf("PATH: %s  CONTENT: %s", r.RequestURI, string(body)),
-		}
-
-		respBody, err := json.Marshal(resp)
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		w.Write(respBody)
-	}
 }
 
 func (a *app) transl8Handler() http.HandlerFunc {

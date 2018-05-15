@@ -19,12 +19,12 @@ func Test_app_routeRequest(t *testing.T) {
 		Type  string `json:"type"`
 	}
 	type want struct {
-		connectivityData map[int]map[string]language.Tag
+		connectivityData map[int]map[string]room
 		response         string
 	}
 	type fields struct {
 		client           *translate.Client
-		connectivityData map[int]map[string]language.Tag
+		connectivityData map[int]map[string]room
 	}
 	type args struct {
 		req  reqStruct
@@ -39,7 +39,7 @@ func Test_app_routeRequest(t *testing.T) {
 	}{
 		{
 			"basic create",
-			fields{nil, make(map[int]map[string]language.Tag)},
+			fields{nil, make(map[int]map[string]room)},
 			args{
 				req: reqStruct{
 					Source: source{
@@ -50,9 +50,9 @@ func Test_app_routeRequest(t *testing.T) {
 				},
 			},
 			want{
-				map[int]map[string]language.Tag{
+				map[int]map[string]room{
 					1: {
-						"f:forum1": language.English,
+						"f:forum1": room{Lang: language.English},
 					},
 				},
 				"Created conference ID: ###",
@@ -63,9 +63,9 @@ func Test_app_routeRequest(t *testing.T) {
 			"basic Join",
 			fields{
 				nil,
-				map[int]map[string]language.Tag{
+				map[int]map[string]room{
 					1: {
-						"ABC": language.Czech,
+						"ABC": room{Lang: language.Czech},
 					},
 				},
 			},
@@ -80,10 +80,10 @@ func Test_app_routeRequest(t *testing.T) {
 				conf: 1,
 			},
 			want{
-				map[int]map[string]language.Tag{
+				map[int]map[string]room{
 					1: {
-						"ABC":      language.Czech,
-						"f:forum1": language.French,
+						"ABC":      room{Lang: language.Czech},
+						"f:forum1": room{Lang: language.French},
 					},
 				},
 				"Joined conference",
@@ -94,10 +94,10 @@ func Test_app_routeRequest(t *testing.T) {
 			"basic Leave",
 			fields{
 				nil,
-				map[int]map[string]language.Tag{
+				map[int]map[string]room{
 					1: {
-						"ABC":      language.Czech,
-						"f:forum1": language.French,
+						"ABC":      room{Lang: language.Czech},
+						"f:forum1": room{Lang: language.French},
 					},
 				},
 			},
@@ -112,9 +112,9 @@ func Test_app_routeRequest(t *testing.T) {
 				conf: 1,
 			},
 			want{
-				map[int]map[string]language.Tag{
+				map[int]map[string]room{
 					1: {
-						"ABC": language.Czech,
+						"ABC": room{Lang: language.Czech},
 					},
 				},
 				"Left conference",

@@ -68,23 +68,23 @@ func (a *app) ShareMessage(m message) error {
 	translations[detecteds[0][0].Language] = m.Data.Parsed
 
 	for _, c := range confs {
-		for r, lang := range a.connectivityData[c] {
-			if detecteds[0][0].Language == lang && r == m.Data.RoomID {
+		for r, room := range a.connectivityData[c] {
+			if detecteds[0][0].Language == room.Lang && r == m.Data.RoomID {
 				continue
 			}
-			if _, ok := translations[lang]; ok == false {
-				trans, err := a.client.Translate(a.ctx, []string{m.Data.Parsed}, lang, &translate.Options{})
+			if _, ok := translations[room.Lang]; ok == false {
+				trans, err := a.client.Translate(a.ctx, []string{m.Data.Parsed}, room.Lang, &translate.Options{})
 				if err != nil {
-					return fmt.Errorf("failed to translate to %s: %v", lang, err)
+					return fmt.Errorf("failed to translate to %s: %v", room.Lang, err)
 				}
-				translations[lang] = trans[0].Text
-				log.Println(translations[lang])
+				translations[room.Lang] = trans[0].Text
+				log.Println(translations[room.Lang])
 			}
 			err = a.PostMessage(
 				postMessageData{
 					Type:         "text_raw",
 					RoomID:       r,
-					Raw:          parseMessage(translations[lang]),
+					Raw:          parseMessage(translations[room.Lang]),
 					BotName:      m.Data.AuthorUser.Name,
 					BotEmail:     "transl8",
 					BotAvatarURL: m.Data.AuthorUser.AvatarURL,
