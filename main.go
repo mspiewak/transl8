@@ -93,7 +93,7 @@ func main() {
 	done := make(chan struct{})
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	// go app.wsHandler(done)
+	go app.wsHandler(done)
 	r := mux.NewRouter()
 	go r.Handle("/transl8", commonHeaders(app.transl8Handler())).Methods(http.MethodPost)
 	go r.Handle("/admin", app.adminHandler()).Methods(http.MethodGet)
