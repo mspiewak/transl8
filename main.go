@@ -97,7 +97,7 @@ func main() {
 	r := mux.NewRouter()
 	go r.Handle("/transl8", commonHeaders(app.transl8Handler())).Methods(http.MethodPost)
 	go r.Handle("/admin", app.adminHandler()).Methods(http.MethodGet)
-	go r.Handle("/details/{confID}", app.adminHandler()).Methods(http.MethodGet)
+	go r.Handle("/details/{confID}", app.detailsHandler()).Methods(http.MethodGet)
 
 	log.Println("listening")
 	go http.ListenAndServe(":9010", r)
