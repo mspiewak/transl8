@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"html"
 	"log"
+	"regexp"
 
 	"cloud.google.com/go/translate"
 
@@ -82,7 +84,7 @@ func (a *app) ShareMessage(m message) error {
 				postMessageData{
 					Type:         "text_raw",
 					RoomID:       r,
-					Raw:          translations[lang],
+					Raw:          parseMessage(translations[lang]),
 					BotName:      m.Data.AuthorUser.Name,
 					BotEmail:     "transl8",
 					BotAvatarURL: m.Data.AuthorUser.AvatarURL,
@@ -91,6 +93,11 @@ func (a *app) ShareMessage(m message) error {
 		}
 	}
 	return nil
+}
+
+func parseMessage(msg string) string {
+	boldTag := regexp.MustCompile(`<(/?)b\b((?:[^>"']|"[^"]*"|'[^']*')*)>`)
+	return boldTag.ReplaceAllString(html.UnescapeString(msg), "*")
 }
 
 func (a *app) findConferencesForRoom(roomID string) []int {
